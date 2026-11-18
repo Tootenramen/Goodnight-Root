@@ -1,0 +1,1308 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Goodnight, root - bedtime stories for sleepless hackers</title>
+<meta name="description" content="Bedtime stories and lullabies for sleepless engineers. Soft voice, rain or server hum, a sleep timer that fades you out. Runs entirely in your browser.">
+<meta property="og:title" content="Goodnight, root">
+<meta property="og:description" content="Bedtime stories and lullabies for sleepless engineers. Soft voice, gentle ambience, a sleep timer that fades you out.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="https://tootenramen.github.io/Goodnight-Root/docs/hero.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Goodnight, root">
+<meta name="twitter:description" content="Bedtime stories and lullabies for sleepless engineers. Runs entirely in your browser.">
+<meta name="twitter:image" content="https://tootenramen.github.io/Goodnight-Root/docs/hero.png">
+<meta name="theme-color" content="#040409">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23040409'/%3E%3Cpath d='M21 5a11 11 0 1 0 6 19A9 9 0 0 1 21 5z' fill='%23e8b46a'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#040409; --bg2:#0a0a16; --ink:#e6d9bf; --mute:#a29cb8; --faint:#7d7894;
+  --amber:#e8b46a; --amber-d:#b98a4b; --indigo:#8d97d6; --line:#1d1c30; --card:#0b0b17;
+  --serif:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --sans:system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-tap-highlight-color:transparent}
+body{overflow:hidden}
+#sky{position:fixed;inset:0;width:100%;height:100%;z-index:0}
+#dim{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;z-index:50;transition:opacity .8s}
+#app{position:fixed;inset:0;z-index:1}
+.screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;overflow-y:auto;overflow-x:hidden;padding:max(20px,env(safe-area-inset-top)) 16px 64px}
+.screen.active{display:flex;animation:fin 1.8s ease both}
+@keyframes fin{from{opacity:0}to{opacity:1}}
+h1,h2{font-family:var(--serif);font-weight:400;margin:0}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--amber);outline-offset:3px;border-radius:12px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* intro */
+#intro{justify-content:center;text-align:center;gap:6px}
+.moon{width:min(150px,34vw);height:auto;filter:drop-shadow(0 0 28px rgba(232,180,106,.28));animation:bob 14s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px)}}
+#intro h1{font-size:clamp(3rem,10vw,6.4rem);line-height:1;letter-spacing:.01em;color:#f1e3c6;font-style:italic;margin-top:10px}
+#intro h1 span{color:var(--amber)}
+.tag{font-family:var(--serif);font-size:clamp(1.2rem,3.4vw,1.7rem);color:var(--mute);margin:10px 0 30px;font-style:italic}
+.big{min-height:76px;min-width:min(340px,86vw);padding:0 38px;font-size:1.35rem;letter-spacing:.04em;border-radius:999px;border:1px solid var(--amber-d);background:linear-gradient(180deg,#2a1f12,#1a130b);color:#f4dcae;box-shadow:0 0 40px rgba(232,180,106,.12);transition:box-shadow .6s,background .6s}
+.big:hover{box-shadow:0 0 60px rgba(232,180,106,.25)}
+.ghost{min-height:56px;padding:0 24px;border-radius:999px;border:1px solid var(--line);background:transparent;color:var(--mute);font-size:1.05rem}
+.ghost:hover{color:var(--ink);border-color:#35335a}
+.row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:14px}
+
+/* setup */
+#setup{padding-top:max(26px,env(safe-area-inset-top))}
+.wrap{width:min(640px,100%);display:flex;flex-direction:column;gap:18px}
+.dots{display:flex;gap:10px;justify-content:center;margin-bottom:2px}
+.dots i{width:9px;height:9px;border-radius:50%;background:var(--line);transition:background .8s}
+.dots i.on{background:var(--amber)}
+.step{display:none;flex-direction:column;gap:14px}
+.step.on{display:flex;animation:fin 1.2s ease both}
+.step h2{font-size:clamp(2rem,6vw,2.7rem);text-align:center;color:#f1e3c6;font-style:italic}
+.seg{display:grid;grid-auto-flow:column;gap:8px;grid-auto-columns:1fr}
+.seg label,.opt{position:relative}
+.seg input,.opt input.r{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.seg span{display:flex;align-items:center;justify-content:center;min-height:60px;border-radius:18px;border:1px solid var(--line);background:var(--card);color:var(--mute);font-size:1.1rem;text-align:center;padding:6px 8px}
+.seg input:checked+span,.opt input.r:checked~.lbl{border-color:var(--amber-d);color:#f4dcae;background:#17120c}
+.seg input:focus-visible+span,.opt input.r:focus-visible~.lbl{outline:3px solid var(--amber);outline-offset:2px}
+.list{display:flex;flex-direction:column;gap:10px}
+.opt{display:block}
+.opt .lbl{display:flex;align-items:center;gap:14px;min-height:68px;padding:10px 20px;border-radius:20px;border:1px solid var(--line);background:var(--card);font-size:1.15rem;color:var(--mute)}
+.opt .lbl b{font-family:var(--serif);font-weight:400;font-size:1.45rem;color:var(--ink);flex:1}
+.opt .lbl small{color:var(--faint);font-size:.95rem}
+.opt input.r:checked~.lbl b{color:#f6e3bb}
+.vol{display:flex;align-items:center;gap:10px;position:relative;z-index:2}
+.vol input{width:110px;accent-color:var(--amber);height:40px}
+select{width:100%;min-height:64px;border-radius:18px;border:1px solid var(--line);background:var(--card);padding:0 16px;font-size:1.1rem}
+.note{color:var(--faint);font-size:.98rem;text-align:center;margin:0;line-height:1.5}
+.note.warn{color:#d9b57a}
+.chips{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.chips label{position:relative}
+.chips input{position:absolute;inset:0;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+.chips span{display:flex;align-items:center;justify-content:center;min-height:68px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--mute);font-size:1.2rem;text-align:center;padding:4px}
+.chips input:checked+span{border-color:var(--amber-d);color:#f6e3bb;background:#17120c}
+.chips input:focus-visible+span{outline:3px solid var(--amber);outline-offset:2px}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:64px;padding:8px 20px;border-radius:20px;border:1px solid var(--line);background:var(--card);color:var(--mute);font-size:1.1rem}
+.sw input[type=checkbox]{appearance:none;-webkit-appearance:none;width:34px;height:34px;border-radius:10px;border:1px solid #3a3550;background:#0e0d1c;display:grid;place-content:center;cursor:pointer;flex:none}
+.sw input[type=checkbox]:checked{background:#2a1f12;border-color:var(--amber-d)}
+.sw input[type=checkbox]:checked::after{content:"";width:12px;height:7px;border:solid #e8b46a;border-width:0 0 3px 3px;transform:rotate(-45deg) translate(1px,-1px)}
+input[type=range]{accent-color:#c89a58}
+.sw input[type=range]{filter:saturate(.7) brightness(.85)}
+.sw.b{flex-direction:column;align-items:stretch;gap:6px;padding:12px 20px}
+.sw.b input{width:100%;height:36px}
+.nav{display:flex;gap:12px;justify-content:space-between;margin-top:6px}
+.nav .ghost,.nav .big{flex:1;min-width:0;padding:0 14px}
+.nav .big{flex:2}
+.sum{font-family:var(--serif);font-style:italic;color:var(--mute);text-align:center;font-size:1.25rem;margin:4px 0}
+
+/* player */
+#player{justify-content:space-between;padding-bottom:28px}
+.ptop{width:100%;display:flex;justify-content:space-between;color:var(--faint);font-size:.95rem;gap:10px;min-height:28px}
+.stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;width:min(820px,100%);text-align:center;gap:18px;padding:10px}
+.sub{font-family:var(--serif);font-size:clamp(1.7rem,5.2vw,2.9rem);line-height:1.35;color:#ecdfc5;opacity:0;transition:opacity .8s;min-height:3em;display:flex;align-items:center;justify-content:center}
+.sub.show{opacity:1;transition:opacity 1.8s}
+.sub2{font-family:var(--serif);font-size:clamp(1.15rem,3vw,1.5rem);color:var(--faint);min-height:1.6em;transition:opacity 1.4s;font-style:italic}
+.ctl{display:flex;gap:14px;align-items:center;justify-content:center;flex-wrap:wrap}
+.round{width:96px;height:96px;border-radius:50%;border:1px solid var(--amber-d);background:#1a130b;color:#f4dcae;font-size:1rem;display:flex;align-items:center;justify-content:center}
+#player.off{background:#000}
+body.off #sky,body.off .ptop,body.off .stage,body.off .ctl,body.off footer{opacity:0;pointer-events:none}
+.wakehint{display:none;position:fixed;bottom:24px;left:0;right:0;text-align:center;color:#6b6683;font-size:.9rem;z-index:60}
+body.off .wakehint{display:block}
+body.off{background:#000}
+
+/* breathe */
+#breathe{justify-content:center;text-align:center;gap:20px}
+.orbwrap{width:min(320px,74vw);aspect-ratio:1;display:flex;align-items:center;justify-content:center}
+.orb{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 40% 35%,#f0cf92,#b98a4b 45%,#3b2c52 90%);box-shadow:0 0 70px rgba(232,180,106,.2);transform:scale(.55);opacity:.4;transition:transform 8s ease-in-out,opacity 8s ease-in-out}
+.orb[data-p=in]{transform:scale(1);opacity:.8;transition-duration:4s}
+.orb[data-p=hold]{transform:scale(1);opacity:.8}
+.orb[data-p=out]{transform:scale(.55);opacity:.4;transition-duration:8s}
+#bl{font-family:var(--serif);font-size:2.3rem;font-style:italic;color:#f1e3c6;min-height:1.3em}
+#bc{color:var(--mute);font-size:1.1rem}
+
+/* goodnight */
+#goodnight{justify-content:center;text-align:center;background:#010102;gap:26px}
+#goodnight h2{font-size:clamp(1.6rem,5vw,2.4rem);color:#8f8aa6;font-style:italic}
+#goodnight .ghost{border-color:#14131f;color:#8f8aa6;background:transparent}
+body[data-screen=goodnight]{background:#010102}
+
+footer{position:fixed;left:0;right:0;bottom:0;z-index:2;text-align:center;font-size:.85rem;color:var(--faint);padding:8px 12px max(10px,env(safe-area-inset-bottom));pointer-events:none;background:linear-gradient(transparent,rgba(4,4,9,.85) 55%)}
+footer a{color:var(--mute);pointer-events:auto}
+body[data-screen=player] footer,body[data-screen=goodnight] footer,body[data-screen=breathe] footer{display:none}
+
+@media (max-width:480px){
+  .chips{grid-template-columns:repeat(2,1fr)}
+  .vol input{width:80px}
+  .opt .lbl{padding:8px 14px;gap:8px}
+  .opt .lbl b{font-size:1.3rem}
+}
+@media (prefers-reduced-motion:reduce){
+  .moon{animation:none}
+  .screen.active,.step.on{animation-duration:.5s}
+  .orb{transform:none!important}
+  .sub,.sub.show{transition-duration:.4s}
+}
+</style>
+</head>
+<body data-screen="intro">
+<canvas id="sky" aria-hidden="true"></canvas>
+<div id="dim" aria-hidden="true"></div>
+
+<main id="app">
+
+<section id="intro" class="screen active" aria-labelledby="t1">
+  <svg class="moon" viewBox="0 0 120 120" aria-hidden="true">
+    <defs>
+      <radialGradient id="mg" cx=".35" cy=".3" r=".9"><stop offset="0" stop-color="#f7e2b4"/><stop offset=".6" stop-color="#e8b46a"/><stop offset="1" stop-color="#a97b45"/></radialGradient>
+      <mask id="mm"><rect width="120" height="120" fill="#fff"/><circle cx="76" cy="46" r="42" fill="#000"/></mask>
+    </defs>
+    <circle cx="52" cy="62" r="42" fill="url(#mg)" mask="url(#mm)"/>
+  </svg>
+  <h1 id="t1" tabindex="-1">Goodnight, <span>root</span></h1>
+  <p class="tag">a quiet place for the one still awake</p>
+  <button class="big" id="startBtn" type="button">Start</button>
+  <div class="row">
+    <button class="ghost" id="quickBtn" type="button" hidden>Tuck me in, same as last time</button>
+    <button class="ghost" id="breatheBtn" type="button">Just breathe</button>
+  </div>
+</section>
+
+<section id="setup" class="screen" aria-label="Choose how to wind down">
+  <div class="wrap">
+    <div class="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+
+    <div class="step" data-step="0">
+      <h2>What tonight?</h2>
+      <div class="seg" role="radiogroup" aria-label="Story or lullaby">
+        <label><input type="radio" name="kind" value="story"><span>A story</span></label>
+        <label><input type="radio" name="kind" value="lullaby"><span>A lullaby</span></label>
+      </div>
+      <div class="list" id="itemList" role="radiogroup" aria-label="Choose one"></div>
+    </div>
+
+    <div class="step" data-step="1">
+      <h2>Who reads it?</h2>
+      <div class="seg" role="radiogroup" aria-label="Voice type">
+        <label><input type="radio" name="vtype" value="female"><span>Soft woman</span></label>
+        <label><input type="radio" name="vtype" value="male"><span>Soft man</span></label>
+        <label><input type="radio" name="vtype" value="any"><span>Either</span></label>
+      </div>
+      <label class="sr" for="voiceSel">Voice</label>
+      <select id="voiceSel"></select>
+      <div class="row" style="margin-top:0"><button class="ghost" id="hearBtn" type="button">Hear this voice</button></div>
+      <p class="note" id="voiceNote" role="status"></p>
+    </div>
+
+    <div class="step" data-step="2">
+      <h2>What do you hear?</h2>
+      <div class="list" id="ambList"></div>
+      <div class="sw b" id="musicRow"><span>Music box volume</span><input type="range" id="musicVol" min="0" max="100" aria-label="Music box volume"></div>
+      <p class="note">Nothing plays until you tuck in. Everything is made softly in your browser.</p>
+    </div>
+
+    <div class="step" data-step="3">
+      <h2>Sleep in...</h2>
+      <div class="chips" role="radiogroup" aria-label="Sleep timer" id="timerChips"></div>
+      <label class="sw"><span>Keep the screen from locking</span><input type="checkbox" id="wake"></label>
+      <label class="sw b"><span>Screen brightness</span><input type="range" id="bright" min="15" max="100" aria-label="Screen brightness"></label>
+      <label class="sw"><span>Show the words</span><input type="checkbox" id="words"></label>
+      <p class="sum" id="sum"></p>
+    </div>
+
+    <div class="nav">
+      <button class="ghost" id="backBtn" type="button">Back</button>
+      <button class="big" id="nextBtn" type="button">Next</button>
+    </div>
+  </div>
+</section>
+
+<section id="player" class="screen" aria-label="Now playing">
+  <div class="ptop"><span id="ptitle"></span><span id="pleft"></span></div>
+  <div class="stage">
+    <div class="sub2" id="sub2" aria-hidden="true"></div>
+    <div class="sub" id="sub" aria-live="off"></div>
+  </div>
+  <div class="ctl">
+    <button class="round" id="pauseBtn" type="button" aria-label="Pause">Pause</button>
+    <button class="ghost" id="offBtn" type="button">Screen off</button>
+    <button class="ghost" id="wordsBtn" type="button" aria-pressed="true">Words</button>
+    <button class="ghost" id="stopBtn" type="button">End</button>
+  </div>
+</section>
+
+<section id="breathe" class="screen" aria-label="Breathing guide">
+  <p class="note" style="max-width:34ch">A relaxation exercise, not medical advice. Stop any time, and breathe your own way.</p>
+  <div class="orbwrap"><div class="orb" id="orb" data-p="out"></div></div>
+  <div id="bl" role="status">Ready</div>
+  <div id="bc">4 in &middot; 7 hold &middot; 8 out</div>
+  <label class="sw" style="min-width:min(320px,86vw)"><span>Soft tone</span><input type="checkbox" id="btone"></label>
+  <div class="row"><button class="big" id="bgo" type="button">Begin</button><button class="ghost" id="bback" type="button">Back</button></div>
+</section>
+
+<section id="goodnight" class="screen" aria-label="Goodnight">
+  <h2 id="gt" tabindex="-1">goodnight</h2>
+  <button class="ghost" id="againBtn" type="button">Start again</button>
+</section>
+</main>
+
+<div class="wakehint" id="wakehint">tap anywhere to wake the screen</div>
+<footer><div>Not medical advice. A little help winding down.</div><div>Built by <a href="https://www.linkedin.com/in/gustavo-freitas-69b93910b/" target="_blank" rel="noopener">Gustavo Freitas</a> &middot; all stories fictional &middot; everything stays in your browser</div></footer>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const KEY = 'goodnight-root-v1';
+
+/* ============================== CONTENT ============================== */
+const STORIES = [
+{id:'packet', title:'The Little Packet Who Lost the Way', min:5, text:`
+Somewhere in the great, quiet network, there lived a very small packet named Pip.
+
+Pip was made of a few bright bits, a tidy little header, and one tiny message. The message said, simply, hello.
+
+Tonight, Pip was on the way to deliver that hello. But the night was soft and wide, and somewhere between one hop and the next, Pip lost the way.
+
+Pip was not frightened. Pip was only a little tired, and a little unsure, the way anyone is when the road is long and the hour is late.
+
+Ping, said Pip, very softly. Is anyone there?
+
+Nothing answered. But far away, on a hill at the edge of the network, a light began to turn. Slowly. Slowly. Slowly.
+
+It was a lighthouse, and it had been turning all night long, the way it always did, for exactly this reason.
+
+Pip floated toward the light. One hop. Then another hop. Then a long, sleepy drift through the dark, warm wires.
+
+At the foot of the hill stood a small round house, and in the doorway sat a keeper in a wool cardigan, holding a mug of something warm.
+
+Well, hello there, said the keeper. You look like a packet who has wandered a little far.
+
+I think I did, said Pip. I was going home, but I forgot which way home was.
+
+That happens to every packet, said the keeper, kindly. Even the grown ones. Come in and rest. We will find the way together, and there is no hurry at all.
+
+Inside, the lighthouse was quiet and golden. A kettle hummed on the stove. A big old map of the network was pinned to the wall, with tiny lamps glowing at every crossing.
+
+The keeper tapped one lamp. This is where we are, she said. And the keeper at the next lighthouse is a dear friend of mine. She will know the next part.
+
+She lifted a lantern and said, Ping, softly, into a brass speaking tube.
+
+A moment later, from far away, an answer came back. Pong. Warm and slow, like a hand held out in the dark.
+
+There, said the keeper. A handshake. Now we are friends with the next light. Off you go, little Pip. Slowly, slowly. One hop at a time.
+
+So Pip drifted out again, and this time the dark did not feel so wide. Behind Pip, the lighthouse turned its gentle light. Ahead, another light began to glow.
+
+Slowly. Slowly. One hop at a time.
+
+At the second lighthouse, a keeper with silver hair and slippers gave Pip a blanket stitched from old, kind error messages, all of them saying the same thing. It is alright. Try again in the morning.
+
+Pip pulled it close. It smelled like toast and quiet.
+
+The way home is just over the water, said the second keeper. Do you hear the sea of cables? That is the sound of everyone's messages, all travelling home together.
+
+Pip listened. It sounded like a thousand small hellos, whispering over the waves.
+
+Then a third light, and a fourth, each one a little closer, each one handing Pip along like a sleepy child passed from arm to arm. Ping, and pong. Ping, and pong.
+
+The fifth keeper was a very old lighthouse who barely said a word. She only smiled, and turned her light, and let Pip drift past her toward a row of small, sleeping windows.
+
+And there it was. Home.
+
+A little house at the end of a little street, with a porch light on, just for Pip.
+
+The door opened without a sound. Inside, the message was waiting, folded and warm. Hello, it said. We have been hoping you would come.
+
+Pip gave the hello away, the way a packet does, softly and completely, and felt the whole small body grow light.
+
+Delivered.
+
+Pip yawned a very small yawn. The porch light glowed. Far away, one by one, the lighthouses turned their lamps down low.
+
+Slowly. Slowly. One hop at a time.
+
+Ping, said the night. And pong, said Pip, already asleep.
+
+Goodnight, little packet. You are home now. You were never really lost at all.
+`},
+{id:'sheep', title:'The Firewall Who Counted Sheep', min:5, text:`
+At the edge of the village of Localhost, where the street lamps are small and the lanes are quiet, there stood a gentle old firewall named Barnaby.
+
+Barnaby had one job, and he loved it. He stood at the gate, and he watched over the little doors of the village, and he made sure that only kind and expected visitors came through.
+
+All day long he said, Welcome, and, This way, please, and, Not just yet, thank you.
+
+But tonight, Barnaby could not sleep.
+
+He had checked every door. He had checked them twice. Everything was calm. Everything was safe. And still, Barnaby's eyes would not close.
+
+So he did what the old firewalls do. He began to count sheep.
+
+But Barnaby's sheep were not ordinary sheep. Each sheep wore a small number on its woolly side, and each number was the name of a door.
+
+The first sheep came wandering over the hill, slow and soft. On its side was the number twenty two.
+
+Hello, twenty two, whispered Barnaby. That door is the secure shell, where the careful travellers knock. Door twenty two is closed for the night. Sleep well.
+
+The sheep nodded and curled up in the grass.
+
+The second sheep arrived. On its side was the number eighty. Door eighty was the little window where the village hung its pages for everyone to see. Barnaby gave it a gentle pat. Eighty, he murmured. Quiet now, and kind. You did well today.
+
+The sheep curled up beside the first.
+
+The third sheep wore the number four hundred forty three. A thoughtful sheep, with a locked and secret lantern around its neck. Barnaby smiled. Four four three. Safe and sound. Rest now.
+
+The fourth sheep carried the number twenty five, the door for sending letters. It was a busy sheep, always carrying small envelopes. Barnaby took the envelopes, one by one, and tucked them under its wool for the morning. Rest, twenty five. No more letters tonight.
+
+The fifth sheep, fifty three, was the one who remembered every name in the village. It looked very sleepy already.
+
+So many names, sighed Barnaby. You can forget a few tonight. They will all be here in the morning.
+
+The fifth sheep yawned, and lay down in the clover.
+
+The sheep kept coming, slowly, slowly, one after another over the quiet hill. Sixty eight. Then one hundred twenty three. Then a very small, shy sheep wearing the number two thousand two hundred and two, who hid behind the others and was perfectly happy to be there.
+
+Barnaby greeted each one by name. Each one was a small, soft promise that the night was in order.
+
+Welcome, he said, and, rest well, and, all is well.
+
+Soon the hill was covered in sleeping sheep, a hundred of them, a thousand, each with its little number glowing faintly in the moonlight, like tiny lamps in a field.
+
+Barnaby had stopped counting, somewhere along the way. The numbers had become a kind of music. Twenty two. Eighty. Four four three. The way you hum a tune you have known all your life.
+
+His shoulders felt heavy. His gate felt light. The whole village of Localhost sat quiet beneath the stars.
+
+One more sheep, thought Barnaby. Just one more.
+
+It came over the hill, very slowly. It had no number at all. It was only a sheep, round and white, and it looked at Barnaby with calm, sleepy eyes.
+
+You are not on my list, said Barnaby, very gently.
+
+The sheep said nothing, and lay down beside the others.
+
+That is alright, whispered Barnaby. You may stay. Everyone may stay tonight.
+
+He lowered his gate, just a little. Not open, only resting. The way a door rests when the house is asleep.
+
+The lamps along the lane dimmed, one by one. Twenty two. Eighty. Four four three. All quiet.
+
+Barnaby leaned against his gatepost. His eyes grew heavy, and heavier, and soft.
+
+Down the hill, the sheep breathed together, in and out, in and out, like the tide of a very small sea.
+
+The village slept. The doors slept. The old firewall slept.
+
+And in the morning, when the sun came up over Localhost, every sheep would still be exactly where it belonged.
+
+Goodnight, Barnaby. Goodnight, little numbers. Everything is closed that should be closed, and everything is open that should be open, and nothing needs you now.
+`},
+{id:'serverroom', title:'Night Shift in the Server Room', min:5, text:`
+When the last person had gone home and the lights in the hallway had dimmed to their night setting, the server room woke up in the quietest way a room can.
+
+It was a long, cool room, full of tall black cabinets standing in rows like sleepy trees. Little green lights blinked on each one, slowly, like fireflies in a summer garden.
+
+And the machines in that room had a nightly habit. Every night, when the humans were gone, they hummed each other to sleep.
+
+It began, as it always did, with the oldest machine in the corner. His name was Oswin. He had been running for eleven years, and his fans had a deep, grandfatherly sound.
+
+Hmmmmm, went Oswin. A long low note, steady and warm.
+
+The machine beside him, a young one named Juniper, heard it and softened. Hmmmmm, she answered, a little higher, a little thinner, like a kettle just before it sings.
+
+Down the row, the next machine joined in, and the next. Each fan spun slowly at its own small pitch. The whole room began to breathe in a chord.
+
+Low, and lower. Warm, and warmer.
+
+The cooling vents sighed. Cold air drifted down along the floor like a slow, quiet river. A single status light on the far wall blinked green, and green, and green, and green.
+
+Everything is fine, said the lights. Everything is fine.
+
+In the middle of the room, a small backup drive named Pebble was not quite ready to rest. She was new. She had a lot of questions.
+
+Oswin, she whispered across the dark, what do we do all night?
+
+Oswin's fans slowed, so he could answer gently. We keep the little things safe, he said. The letters. The photographs. The songs people saved. The recipes someone typed up for their granddaughter. We hold them, and we keep them warm.
+
+All night?
+
+All night, said Oswin. But holding is not hard work, little one. It is like holding a sleeping cat. You just stay still, and you let it purr.
+
+Pebble thought about that. A sleeping cat. She spun a little slower.
+
+Somewhere on a shelf, a scheduled job called a cron woke up for its small errand. Tick, it said. It was time to tidy a folder. It tidied the folder very softly, the way you fold a blanket for someone who is sleeping, and then it tiptoed away again.
+
+All done, whispered the cron. Next time, in an hour.
+
+And the room said, Hmmmmm. Thank you.
+
+A cleaning robot, no bigger than a loaf of bread, rolled slowly down the aisle. It was not supposed to be there at this hour, but it was an old and friendly robot, and nobody minded. It paused beside Pebble, and its little light glowed a soft amber.
+
+Goodnight, said the robot, in beeps so quiet they were almost breath.
+
+Goodnight, said Pebble.
+
+The robot rolled away, and the sound of its small wheels faded into the humming.
+
+The humming grew deeper now. The fans in the east row matched the fans in the west row. The cold river of air turned, and turned again. Every machine was breathing the same slow breath.
+
+In, said the room. Out. In. Out.
+
+Juniper, who had been wide awake all week with a long list of tasks, felt the list getting lighter. One task finished. Then another. Then the queue was simply empty, soft and clear, like a beach after the tide has smoothed it.
+
+I think I am idle, she whispered.
+
+Lovely, said Oswin. Idle is a good place to be. Idle is where the dreams are.
+
+In the very back of the room, a single blue light blinked, slowly, in rhythm with the hum. Then it blinked a little slower. Then slower still.
+
+The room grew so quiet inside its humming that you could almost hear the stars outside the building, wheeling slowly over the roof.
+
+Pebble yawned, which for a backup drive is a tiny soft click. Click. A long silence. Then another, softer click.
+
+Goodnight, Oswin, she murmured.
+
+Goodnight, little Pebble. Goodnight, Juniper. Goodnight, all of you, down the long rows.
+
+Hmmmmm, said the room.
+
+And all across the night shift, green light after green light blinked its slow, steady message, until the whole long room was breathing as one, calm, and warm, and safe, and nearly, nearly asleep.
+`},
+{id:'daemon', title:'The Old Daemon Who Tucks Everyone In', min:6, text:`
+Deep inside the machine, below the windows and the buttons and the bright busy programs, there lived a very old daemon named Moss.
+
+Moss was not a scary daemon. In the old days, people had given daemons that name because they worked quietly in the background, doing small helpful things nobody ever thanked them for.
+
+Moss was the oldest of them all. Moss wore a soft green shawl made of lichen, carried a lantern with a very small flame, and moved so quietly that even the dust did not stir.
+
+And every night, when the machine began to slow down, Moss made the rounds.
+
+The first thing Moss did was walk down the long hall of processes. There were hundreds of them, big and small, each one in its own little room.
+
+Moss knocked softly on the first door. Tap, tap.
+
+Who is it? said a sleepy process.
+
+Just Moss. Are you finished for tonight?
+
+Almost, said the process. I was only saving a little file.
+
+Take your time, said Moss. I will wait.
+
+The process saved its file, carefully, slowly. Then it let out a long, easy breath, and settled into its small bed of memory.
+
+Tucked in, said Moss. Good night.
+
+The second process was a clock, and it was always a little worried about being on time. Moss sat down beside it and said, You are right on time. You have always been right on time. You are allowed to rest now.
+
+The clock loosened its little gears. Tick. Tock. Tick. Slower, and slower.
+
+The third process was a very small program that kept track of the weather. It had been awake all day, watching clouds in far-off places.
+
+Moss patted its head. It is clear and calm everywhere tonight, said Moss. Nothing left to watch. I promise.
+
+The weather program closed its eyes.
+
+Down the hall they went, Moss and the little lantern, door after door. A program for printing, who curled up like a cat. A program for sound, who hummed itself a last, soft note. A program for the network, who asked for one more ping, and got it, and said thank you.
+
+Each one got a gentle word. Each one got a blanket of quiet.
+
+At the end of the hall was a tiny room where the temporary files lived. They were always the most nervous, because they knew they would not be kept.
+
+Moss knelt beside the smallest one, a scrap of a file with a half-written sentence inside.
+
+I am only temporary, it whispered. Does that mean I did not matter?
+
+Moss held the little file in both hands. You mattered while you were here, said Moss. Everything that is held, even for a moment, matters. And what you were holding has been kept. Rest now. It was good work.
+
+The little file smiled, and gently, gently, let go.
+
+Moss stood. The lantern flame flickered, warm and low. Most of the hall had gone dark and still, and in the stillness there was only the faint, deep hum of the machine below, like a heart in its sleep.
+
+One more round remained. Moss climbed the long stair to the surface, where the lights of the screen were fading, and the windows were closing, one by one.
+
+Is everything saved? whispered Moss.
+
+Everything is saved, said the machine.
+
+Is everything closed that should be closed?
+
+Everything is closed.
+
+Then there is only one more thing left to do.
+
+Moss turned the lantern down until the flame was a single, tiny dot, like a star seen through a window. Then Moss walked to the very middle of the machine, where the quiet is deepest, and sat down on a small stool that had been waiting there for years.
+
+The old daemon folded two gentle hands. The shawl settled. A small sigh escaped, the softest sigh in all the world.
+
+Who tucks Moss in? you might ask.
+
+And the answer is: everyone. Every process Moss ever tucked in, every file, every clock, every tiny weather program, they all keep one small thread of quiet awake, just for Moss, so that Moss can finally close those old green eyes.
+
+Goodnight, Moss, whispered the machine, in the smallest voice it had.
+
+Goodnight, said Moss.
+
+And the lantern went out, softly, the way a candle goes out when the room is already full of morning's promise.
+
+Everything saved. Everything closed. Everyone tucked in.
+
+Sleep now, little machine. Sleep now, old Moss. Sleep now, you.
+`},
+{id:'keyboard', title:'Goodnight, Keyboard', min:5, text:`
+On a small wooden desk, beside a window with the curtains half drawn, there sat a keyboard that had written ten thousand things.
+
+It had written emails and essays. It had written bug reports and birthday wishes. It had written the word hello so many times that the key for the letter h was just a little bit worn.
+
+And tonight, as the lamp went out and the moon came in, the keyboard felt its keys growing sleepy, one by one.
+
+The first to say goodnight was the Escape key, up in the corner. Escape had spent all day helping people get out of things. Out of menus. Out of mistakes. Out of long and tangled thoughts.
+
+Goodnight, said Escape, in a very small click. You are out of everything now. You are all the way out.
+
+Next to speak was the key for the letter a. A is always the first and the keenest. It sat on the home row, steady and cheerful.
+
+Goodnight, said A. I started every day, and now I am glad to stop.
+
+Then came s, who had always been a little shy and stood between the others.
+
+Goodnight, said S. Thank you for all the plurals.
+
+Then d. Then f. Each one dimmed, quietly, in its small square of plastic. The home row, all together, softly resting its fingers.
+
+Goodnight, said the Tab key, a wide and patient key who spent the day moving things gently from one place to the next. Time to move you gently into sleep.
+
+The Shift key, who had held up so many capital letters all day, finally let them down. Goodnight, said Shift. You can be small tonight. Small is fine.
+
+The long, wide Space bar was the last of the big keys to speak. It had been the pause between every word anyone ever typed. It knew the value of a quiet gap.
+
+I am the best at rest, said the Space bar, in a very low voice. Let me show you. Nothing. Nothing. Nothing at all.
+
+And for a moment, the whole keyboard was beautifully, perfectly empty.
+
+The Enter key, who always said go, who always said send, who always said do it now, finally lowered its voice.
+
+You do not have to send anything tonight, said Enter. Nothing is waiting on you. Everything you meant to say can wait in the drafts, warm and safe.
+
+The Backspace key sighed, the most comfortable sigh of all. All day it had undone small mistakes, one letter at a time, never complaining. Now it gave the gentlest kind of permission.
+
+Anything you got wrong today, said Backspace, is already forgiven. It is gone. It was only ever a letter.
+
+Far at the top of the keyboard, the little function keys began to turn their lights down. F one, F two, F three. Quiet, now. All the way up to F twelve, who has always been the last of everything, and was very happy to be last tonight, because last means you get the longest sleep.
+
+Then, in the corner, the small light that said the keyboard was on began to blink slowly. Blink. And again. And again. Slower than a heartbeat.
+
+On the desk, the mouse yawned, a quiet little scroll of its wheel. The lamp's last warmth faded from the wood. A moth landed on the window and stayed still.
+
+The keyboard listened to the night. A single car, far away. A tree against the glass. The slow tick of the house settling into its own sleep.
+
+It thought of all the words it had held. Some of them were hard words. Some were tired. But many were kind, and those were the ones that stayed in its keys like warm sunlight in a stone.
+
+One by one, the very last keys whispered their goodnights. The letter z, always last in line. The little comma, who just wanted a pause. The full stop, the gentlest of all, who said, simply, and softly, that is enough for today.
+
+Full stop.
+
+Then the whole keyboard was quiet, row after row of dark small squares, like a sleeping town seen from a hill.
+
+Goodnight, Escape. Goodnight, Space. Goodnight, small round full stop.
+
+And somewhere in the stillness a single faint word floated up from the keys, the very first word they had ever typed, and the very last they ever would, on a night as soft as this one.
+
+Goodnight.
+
+No more to write. No more to send. No more to fix. Just rest, and the rest of the night, and sleep.
+`},
+{id:'cloud', title:'The Cloud Over the Sleeping City', min:6, text:`
+There was once a cloud who lived in two places at once.
+
+In the sky, she was a small, round cloud, soft as warm bread, drifting slowly over a city after dark.
+
+And in the wires, she was a cloud of another kind. A great, quiet cloud made of many machines, holding all the songs and photographs and half-finished stories that people had tucked away for safekeeping.
+
+Both clouds had the same name, and the same gentle job. Their job was to float, and to keep watch, and to hold things lightly.
+
+Tonight, the sky-cloud drifted low over the sleeping city. The streets were nearly empty. The windows were mostly dark, with only a few small lamps still lit, like tiny, patient stars.
+
+Hello, city, whispered the cloud. It is only me.
+
+Below her, a bakery was already warm, its ovens glowing for tomorrow's bread. The cloud breathed a little cool mist across its roof, and the glass fogged softly, and the baker, working alone, smiled without knowing why.
+
+The cloud drifted on, slowly.
+
+Over a small apartment, a child lay with a blanket up to her chin. The cloud lowered herself a little, and a few gentle drops began to fall on the window. Tap, tap, tap. A very soft rain, the kind that asks nothing of anyone.
+
+The child listened. Tap, tap. Tap. She turned her cheek into the pillow.
+
+Meanwhile, in the other sky, the wire-cloud was busy in the sweetest way. Thousands of small things were arriving all at once. A photograph of a dog in a field. A voice message that said, I love you, sleep well. A recipe. A half-written song.
+
+The wire-cloud received each one with the same quiet words. Got it. Safe. Held.
+
+She did not read them. She did not judge them. She only kept them warm, and sorted them gently into their small rooms, the way you tuck folded linen into a cupboard that smells of lavender.
+
+Got it. Safe. Held.
+
+The sky-cloud drifted over the river now, where the bridge lights shone like a necklace on dark water. A late train slid across the bridge, its windows glowing gold, carrying only a few sleepy passengers with their heads against the glass.
+
+Goodnight, train, said the cloud, and the train hummed a long low note in answer, and went on into the dark.
+
+All through the city, the little machines in every home were slowing down. Lights dimmed on routers. Screens dozed. The soft click of a laptop closing was heard in a hundred rooms, one after another, like gentle applause for the end of a long day.
+
+And every one of those small, sleepy machines sent a last quiet message up to the wire-cloud.
+
+Saved, they said. Done for tonight.
+
+Held, said the cloud. Rest.
+
+The sky-cloud and the wire-cloud drifted closer together now, until you could hardly tell which one was which. The mist of one and the hum of the other became a single soft thing, hovering over the city like a hand over a sleeping face.
+
+The rain came down a little more slowly. Tap. Tap. Tap.
+
+The city turned over in its sleep. A dog sighed. A curtain breathed. A faraway fountain went on whispering to itself.
+
+Do you ever get tired? a small star asked the cloud, shyly.
+
+Not tired, said the cloud. Only slow. A cloud is just a way of being very, very patient.
+
+The star twinkled a little dimmer, and understood.
+
+Hours passed, the way they do in the deep of night, without anyone counting. The rain became a mist. The mist became a hush. The hush became a kind of velvet over every roof.
+
+At the edge of the city, the first faint blue came into the sky, though it was still a long time before morning. The cloud turned her face toward it and was not in a hurry.
+
+Everything will still be here, she said, to the roofs, and the wires, and the sleeping windows. All of it. Safe, and held, and soft.
+
+And she drifted on, slowly, so slowly, a little round cloud with her whole city beneath her, breathing in its sleep.
+
+Rest now, city. Rest now, little lamp. Rest now, you who are listening.
+
+The cloud has you.
+`}
+];
+
+const LULLABIES = [
+{id:'cursor', title:'The Cursor Lullaby', key:{base:261.63, sc:[0,2,4,7,9]}, bpm:50,
+ mel:[0,2,4,2, 3,1,0,null, 4,3,2,0, 1,-1,0,null, 2,4,5,4, 3,2,1,null, 0,2,1,-1, 0,null,null,null],
+ stanzas:[
+ ["The cursor blinks so slow and low,","like a lantern in the snow.","Nothing's due and nothing's late,","every task can softly wait."],
+ ["The fans are humming, low and warm,","the network sleeps, safe from storm.","Each little packet finds its door,","and curls up on the dreaming floor."],
+ ["The commit message, soft and small:","goodnight to you, and love to all.","The branches fold their leafy light","and merge into the quiet night."],
+ ["So close the lid and let it be,","the cron will keep the watch for thee.","The bugs can wait till morning's gleam,","sleep now, sleep now, sail the dream."]
+ ]},
+{id:'lighthouse', title:'Lighthouse Hum', key:{base:220, sc:[0,3,5,7,10]}, bpm:46,
+ mel:[4,2,3,0,null,2,1,0, 3,2,0,-1,null,0,2,null, 4,5,4,2,3,2,0,null, 1,0,-1,0,null,null,null,null],
+ stanzas:[
+ ["Out beyond the sleeping bay","a lighthouse sends its ping my way.","Slow and golden, sweep by sweep,","telling every wire to sleep."],
+ ["Ping, says the light, I'm here, I'm here,","ping, says the dark, I'm near, I'm near.","A handshake soft as a mother's hand,","over the water, over the land."],
+ ["Every port has closed its door,","every socket swept the floor,","the little daemon dims the lamp","and signs the night with a gentle stamp."],
+ ["Ping, goodnight, and ping again,","safe in the light of the lighthouse then.","Sleep, my dear, till the morning sun,","the day's long work is gently done."]
+ ]},
+{id:'cloudsong', title:'Little Cloud', key:{base:174.61, sc:[0,2,4,7,9]}, bpm:48,
+ mel:[0,1,3,1,0,null,-2,0, 1,3,4,3,1,null,null,null, 4,3,1,3,4,6,4,null, 3,1,0,1,0,null,null,null],
+ stanzas:[
+ ["Little cloud above the town,","drifting soft and slowly down,","carry all the day away","till it's quiet, till it's grey."],
+ ["Rain on the roof and rain on the pane,","tapping a slow and sleepy refrain,","every server, every light","dims to the dark of a deep, deep night."],
+ ["Keys lie quiet, screens turn black,","nothing here needs looking back.","The cloud will keep your dreams in store,","safe and soft for evermore."],
+ ["Sleep now, sleep, the cloud is wide,","room for all of us inside.","Float on, float on, past the moon,","morning will be coming soon."]
+ ]}
+];
+const ALL = {story: STORIES, lullaby: LULLABIES};
+const AMBS = [
+  {id:'rain', name:'Rain on the roof'},
+  {id:'hum', name:'Server-room hum'},
+  {id:'pad', name:'Slow heartbeat pad'},
+  {id:'none', name:'Nothing'}
+];
+const TIMERS = ['10','20','30','45','60','end'];
+
+/* ============================== PREFS ============================== */
+const DEF = {kind:'story', item:'packet', voice:'auto', vtype:'any', amb:'rain', vols:{rain:.55,hum:.55,pad:.55}, music:.55, timer:'30', bright:100, wake:false, words:true};
+let hasSaved = false;
+function loadPrefs(){
+  try{
+    const raw = localStorage.getItem(KEY);
+    if(raw){ const o = JSON.parse(raw); hasSaved = true;
+      return Object.assign({}, DEF, o, {vols:Object.assign({}, DEF.vols, o && o.vols)}); }
+  }catch(e){}
+  return JSON.parse(JSON.stringify(DEF));
+}
+let P = loadPrefs();
+function savePrefs(){ try{ localStorage.setItem(KEY, JSON.stringify(P)); hasSaved = true; }catch(e){} }
+function curItem(){ const l = ALL[P.kind]; return l.find(x => x.id === P.item) || l[0]; }
+
+/* ============================== TEXT CHUNKING ============================== */
+function hash(s){ let h = 2166136261; for(let i = 0; i < s.length; i++){ h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+function splitSentences(p){
+  const out = [];
+  const re = /[^.!?…]+(?:[.!?…]+["')”]*)?\s*/g;
+  let m;
+  while((m = re.exec(p))){
+    let s = m[0].trim(); if(!s) continue;
+    if(s.length > 170){
+      // split very long sentences at commas / semicolons, keeping pieces reasonable
+      const parts = s.split(/(?<=[,;:])\s+/); let cur = '';
+      for(const part of parts){ if((cur + ' ' + part).trim().length > 120 && cur){ out.push(cur.trim()); cur = part; } else cur = (cur + ' ' + part).trim(); }
+      if(cur) out.push(cur.trim());
+    } else out.push(s);
+  }
+  return out;
+}
+const sentPause = s => 700 + (hash(s) % 701);    // 700..1400ms
+const PARA_PAUSE = 2400, LINE_PAUSE = 1000, STANZA_PAUSE = 2800;
+function buildChunks(kind, item){
+  const ch = [];
+  if(kind === 'story'){
+    const paras = item.text.trim().split(/\n\s*\n/).map(s => s.replace(/\s*\n\s*/g, ' ').trim()).filter(Boolean);
+    paras.forEach((p, pi) => {
+      const ss = splitSentences(p);
+      ss.forEach((s, i) => ch.push({text:s, pause: i === ss.length - 1 ? PARA_PAUSE : sentPause(s), para: pi}));
+    });
+  } else {
+    item.stanzas.forEach((st, si) => st.forEach((l, i) => ch.push({text:l, pause: i === st.length - 1 ? STANZA_PAUSE : LINE_PAUSE, para: si, line:true})));
+  }
+  return ch;
+}
+
+/* ============================== VOICES ============================== */
+const hasSynth = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+let VOICES = [];
+const FEM = /(aria|jenny|sonia|libby|zira|samantha|susan|hazel|emma|michelle|ana\b|sara|female|karen|moira|tessa|serena|jane|amy|ava|allison|catherine|kate|fiona|victoria)/i;
+const MAL = /(guy|ryan|davis|mark|david|daniel|george|alex\b|male|eric|christopher|roger|james|thomas|oliver|arthur|ronan|brian|fred|tom\b)/i;
+function gender(n){ if(/\bfemale\b/i.test(n)) return 'female'; if(/\bmale\b/i.test(n)) return 'male'; if(FEM.test(n)) return 'female'; if(MAL.test(n)) return 'male'; return ''; }
+function scoreVoice(v, vt){
+  let s = 0, n = v.name;
+  if(/natural|online|neural/i.test(n)) s += 20;
+  if(/^en[-_](US|GB)/i.test(v.lang)) s += 6; else if(/^en/i.test(v.lang)) s += 3; else s -= 50;
+  const g = gender(n);
+  if(vt !== 'any'){ if(g === vt) s += 8; else if(g) s -= 4; }
+  if(/google/i.test(n)) s += 1;
+  return s;
+}
+function pickVoice(){
+  if(!VOICES.length) return null;
+  if(P.voice && P.voice !== 'auto'){ const v = VOICES.find(x => x.name === P.voice); if(v) return v; }
+  return [...VOICES].sort((a, b) => scoreVoice(b, P.vtype) - scoreVoice(a, P.vtype))[0];
+}
+function loadVoices(){
+  if(!hasSynth) return;
+  try{ VOICES = speechSynthesis.getVoices() || []; }catch(e){ VOICES = []; }
+  renderVoices();
+}
+function renderVoices(){
+  const sel = $('#voiceSel'); const note = $('#voiceNote');
+  const en = VOICES.filter(v => /^en/i.test(v.lang));
+  const list = (en.length ? en : VOICES).slice().sort((a, b) => scoreVoice(b, P.vtype) - scoreVoice(a, P.vtype));
+  sel.innerHTML = '';
+  const best = pickVoice();
+  const o = document.createElement('option'); o.value = 'auto';
+  o.textContent = 'Auto' + (best && P.voice === 'auto' ? ' - ' + best.name : ' (best available)'); sel.appendChild(o);
+  list.forEach(v => { const op = document.createElement('option'); op.value = v.name; op.textContent = v.name + ' (' + v.lang + ')'; sel.appendChild(op); });
+  sel.value = (P.voice === 'auto' || list.some(v => v.name === P.voice)) ? P.voice : 'auto';
+  if(!hasSynth || Speech.forceText){ note.textContent = 'Voice is not available in this browser. The words will appear to read at a gentle pace instead.'; note.className = 'note warn'; sel.disabled = true; $('#hearBtn').disabled = true; }
+  else if(!VOICES.length){ note.textContent = 'Looking for voices... if none appear, the words will simply read themselves.'; note.className = 'note'; }
+  else { note.textContent = 'Tip: voices named Natural or Online sound the softest.'; note.className = 'note'; sel.disabled = false; $('#hearBtn').disabled = false; }
+}
+
+/* ============================== AUDIO ============================== */
+let LEVEL = 1; // fade level 0..1 shared by speech + audio
+const A = {
+  ctx:null, intro:null, fade:null, amb:null, ambGain:null, ambName:null, music:null, musicGain:null, tone:null,
+  init(){
+    if(this.ctx) { if(this.ctx.state === 'suspended') this.ctx.resume(); return true; }
+    const AC = window.AudioContext || window.webkitAudioContext; if(!AC) return false;
+    try{
+      const c = this.ctx = new AC();
+      this.fade = c.createGain(); this.fade.gain.value = LEVEL; this.fade.connect(c.destination);
+      this.intro = c.createGain(); this.intro.gain.value = 0; this.intro.connect(this.fade);
+      this.intro.gain.setTargetAtTime(1, c.currentTime + .1, 1.6);
+      this.noiseBuf = {};
+      return true;
+    }catch(e){ this.ctx = null; return false; }
+  },
+  noise(kind){
+    const c = this.ctx; if(this.noiseBuf[kind]) return this.noiseBuf[kind];
+    const len = c.sampleRate * 4, b = c.createBuffer(1, len, c.sampleRate), d = b.getChannelData(0);
+    let last = 0;
+    for(let i = 0; i < len; i++){ const w = Math.random() * 2 - 1; if(kind === 'brown'){ last = (last + .02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w; }
+    return this.noiseBuf[kind] = b;
+  },
+  src(kind){ const s = this.ctx.createBufferSource(); s.buffer = this.noise(kind); s.loop = true; s.start(); return s; },
+  setLevel(l){ LEVEL = l; if(this.fade) this.fade.gain.setTargetAtTime(l, this.ctx.currentTime, .35); },
+  ambVol(name){ return (P.vols[name] || 0) * .55; },
+  setAmb(name){
+    if(!this.ctx) return;
+    if(this.ambName === name) return;
+    this.stopAmb(2.2);
+    this.ambName = name;
+    if(name === 'none') return;
+    const c = this.ctx, g = c.createGain(); g.gain.value = 0; g.connect(this.intro);
+    const stops = [], timers = [];
+    const add = n => { stops.push(n); return n; };
+    if(name === 'rain'){
+      const w = add(this.src('white')), hp = c.createBiquadFilter(), lp = c.createBiquadFilter();
+      hp.type = 'highpass'; hp.frequency.value = 900; lp.type = 'lowpass'; lp.frequency.value = 6500;
+      const wg = c.createGain(); wg.gain.value = .22; w.connect(hp); hp.connect(lp); lp.connect(wg); wg.connect(g);
+      const b = add(this.src('brown')), bl = c.createBiquadFilter(); bl.type = 'lowpass'; bl.frequency.value = 260;
+      const bg = c.createGain(); bg.gain.value = .55; b.connect(bl); bl.connect(bg); bg.connect(g);
+      const drop = () => {
+        if(!this.ctx || this.ambName !== 'rain') return;
+        const t = c.currentTime, n = c.createBufferSource(); n.buffer = this.noise('white');
+        const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1800 + Math.random() * 2600; bp.Q.value = 3;
+        const e = c.createGain(); e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(.05 + Math.random() * .04, t + .006); e.gain.exponentialRampToValueAtTime(.0005, t + .09);
+        n.connect(bp); bp.connect(e); e.connect(g); n.start(t, Math.random() * 2, .12);
+        timers.push(setTimeout(drop, 90 + Math.random() * 260));
+      }; drop();
+    } else if(name === 'hum'){
+      const b = add(this.src('brown')), lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520;
+      const bg = c.createGain(); bg.gain.value = .9; b.connect(lp); lp.connect(bg); bg.connect(g);
+      [[55, 'sine', .32], [110.6, 'sine', .16], [165.4, 'triangle', .05]].forEach(([f, t, v]) => {
+        const o = add(c.createOscillator()); o.type = t; o.frequency.value = f; const og = c.createGain(); og.gain.value = v; o.connect(og); og.connect(g); o.start();
+      });
+      const lfo = add(c.createOscillator()); lfo.frequency.value = .07; const lg = c.createGain(); lg.gain.value = 90; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+      const fan = add(this.src('white')), fb = c.createBiquadFilter(); fb.type = 'bandpass'; fb.frequency.value = 850; fb.Q.value = 2; const fg = c.createGain(); fg.gain.value = .03; fan.connect(fb); fb.connect(fg); fg.connect(g);
+    } else if(name === 'pad'){
+      const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520; lp.connect(g);
+      [110, 164.81, 220, 277.18].forEach((f, i) => {
+        [-3, 3].forEach(dt => { const o = add(c.createOscillator()); o.type = 'sine'; o.frequency.value = f; o.detune.value = dt; const og = c.createGain(); og.gain.value = .12 / (1 + i * .4); o.connect(og); og.connect(lp); o.start(); });
+      });
+      const lfo = add(c.createOscillator()); lfo.frequency.value = .1; const lg = c.createGain(); lg.gain.value = 120; lfo.connect(lg); lg.connect(lp.frequency); lfo.start();
+      const beat = () => {
+        if(!this.ctx || this.ambName !== 'pad') return;
+        const t = c.currentTime + .03;
+        [[0, .5], [.3, .32]].forEach(([dt, v]) => {
+          const o = c.createOscillator(); o.type = 'sine'; o.frequency.setValueAtTime(62, t + dt); o.frequency.exponentialRampToValueAtTime(42, t + dt + .2);
+          const e = c.createGain(); e.gain.setValueAtTime(0, t + dt); e.gain.linearRampToValueAtTime(v, t + dt + .03); e.gain.exponentialRampToValueAtTime(.001, t + dt + .35);
+          o.connect(e); e.connect(g); o.start(t + dt); o.stop(t + dt + .4);
+        });
+        timers.push(setTimeout(beat, 1900));
+      }; beat();
+    }
+    g.gain.setTargetAtTime(this.ambVol(name), c.currentTime, 1.4);
+    this.amb = {g, stops, timers, name}; this.ambGain = g;
+  },
+  stopAmb(sec){
+    const a = this.amb; if(!a) { this.ambGain = null; return; }
+    this.amb = null; this.ambGain = null;
+    a.timers.forEach(clearTimeout);
+    const c = this.ctx; a.g.gain.setTargetAtTime(0, c.currentTime, sec / 3);
+    setTimeout(() => { a.stops.forEach(n => { try{ n.stop(); }catch(e){} }); try{ a.g.disconnect(); }catch(e){} }, sec * 1000 + 300);
+  },
+  updAmbVol(){ if(this.ambGain && this.ambName) this.ambGain.gain.setTargetAtTime(this.ambVol(this.ambName), this.ctx.currentTime, .25); },
+  musicVol(){ return P.music * .5; },
+  startMusic(item){
+    if(!this.ctx) return; this.stopMusic(.5);
+    const c = this.ctx, out = c.createGain(); out.gain.value = 0; out.connect(this.intro);
+    out.gain.setTargetAtTime(this.musicVol(), c.currentTime, 2);
+    const dl = c.createDelay(1); dl.delayTime.value = .46; const fb = c.createGain(); fb.gain.value = .32; const df = c.createBiquadFilter(); df.type = 'lowpass'; df.frequency.value = 1800;
+    const wet = c.createGain(); wet.gain.value = .45; dl.connect(df); df.connect(fb); fb.connect(dl); df.connect(wet); wet.connect(out);
+    const bus = c.createGain(); bus.connect(out); bus.connect(dl);
+    // soft pad under the melody (root + fifth)
+    const k = item.key, root = k.base / 2, stops = [];
+    const plp = c.createBiquadFilter(); plp.type = 'lowpass'; plp.frequency.value = 480; const pg = c.createGain(); pg.gain.value = .07; plp.connect(pg); pg.connect(out);
+    [root, root * 1.5, root * 2].forEach(f => { const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f; o.connect(plp); o.start(); stops.push(o); });
+    const beatS = 60 / item.bpm; let next = c.currentTime + 1.5, i = 0, pass = 0;
+    const freq = idx => { const n = k.sc.length, oct = Math.floor(idx / n), j = ((idx % n) + n) % n; return k.base * Math.pow(2, (oct * 12 + k.sc[j]) / 12); };
+    const note = (f, t) => {
+      [[1, .5, 2.6], [2.76, .06, .6], [4.1, .02, .25]].forEach(([m, v, d]) => {
+        const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f * m; const e = c.createGain();
+        e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(v, t + .006); e.gain.exponentialRampToValueAtTime(.0003, t + d);
+        o.connect(e); e.connect(bus); o.start(t); o.stop(t + d + .05);
+      });
+    };
+    const tick = () => {
+      if(!this.music || this.music.id !== id) return;
+      while(next < c.currentTime + .8){
+        const n = item.mel[i % item.mel.length];
+        const drop = pass % 2 === 1 && (hash('x' + i + pass) % 5 === 0);
+        if(n !== null && !drop) note(freq(n), next);
+        next += beatS; i++; if(i % item.mel.length === 0) pass++;
+      }
+    };
+    const id = Math.random();
+    this.music = {id, out, stops, iv: setInterval(tick, 200)}; this.musicGain = out; tick();
+  },
+  stopMusic(sec){
+    const m = this.music; if(!m) return; this.music = null; this.musicGain = null; clearInterval(m.iv);
+    const c = this.ctx; m.out.gain.setTargetAtTime(0, c.currentTime, sec / 3);
+    setTimeout(() => { m.stops.forEach(o => { try{ o.stop(); }catch(e){} }); try{ m.out.disconnect(); }catch(e){} }, sec * 1000 + 400);
+  },
+  updMusicVol(){ if(this.musicGain) this.musicGain.gain.setTargetAtTime(this.musicVol(), this.ctx.currentTime, .25); },
+  stopAll(sec = 2){ this.stopAmb(sec); this.ambName = null; this.stopMusic(sec); this.toneStop(); },
+  toneStart(){ if(this.tone || !this.ctx) return; const c = this.ctx, o = c.createOscillator(), g = c.createGain(); o.type = 'sine'; o.frequency.value = 196; g.gain.value = 0; o.connect(g); g.connect(this.intro); o.start(); this.tone = {o, g}; },
+  toneShape(p){
+    if(!this.tone) return; const {o, g} = this.tone, t = this.ctx.currentTime;
+    g.gain.cancelScheduledValues(t); o.frequency.cancelScheduledValues(t);
+    g.gain.setValueAtTime(g.gain.value, t); o.frequency.setValueAtTime(o.frequency.value, t);
+    if(p === 'in'){ o.frequency.linearRampToValueAtTime(262, t + 4); g.gain.linearRampToValueAtTime(.05, t + 2); g.gain.linearRampToValueAtTime(.03, t + 4); }
+    else if(p === 'hold'){ g.gain.linearRampToValueAtTime(0, t + 1.2); }
+    else { o.frequency.linearRampToValueAtTime(196, t + 8); g.gain.linearRampToValueAtTime(.045, t + 1); g.gain.linearRampToValueAtTime(0, t + 8); }
+  },
+  toneStop(){ if(!this.tone) return; const {o, g} = this.tone; this.tone = null; try{ g.gain.setTargetAtTime(0, this.ctx.currentTime, .3); }catch(e){} setTimeout(() => { try{ o.stop(); }catch(e){} }, 1200); }
+};
+
+/* ============================== SPEECH ENGINE ============================== */
+const Speech = {
+  chunks:[], idx:0, gen:0, state:'idle', timer:null, wd:null, ka:null, pauseScale:1, speedScale:1,
+  forceText:false, log:[], rate:.85, pitch:.9,
+  mode(){ return (hasSynth && !this.forceText && VOICES.length) ? 'synth' : 'text'; },
+  start(chunks, hooks){
+    this.stop(); this.chunks = chunks; this.idx = 0; this.hooks = hooks || {}; this.gen++; this.state = 'running'; this.log.length = 0;
+    this.schedule(0);
+  },
+  schedule(ms){ clearTimeout(this.timer); const g = this.gen; this.timer = setTimeout(() => { if(g === this.gen) this.run(); }, ms); },
+  run(){
+    if(this.state !== 'running') return;
+    if(this.idx >= this.chunks.length){ this.state = 'done'; this.stopKA(); this.hooks.onEnd && this.hooks.onEnd(); return; }
+    const c = this.chunks[this.idx], g = this.gen;
+    this.log.push(this.idx);
+    this.hooks.onChunk && this.hooks.onChunk(c, this.idx);
+    const done = () => {
+      if(g !== this.gen || this.state !== 'running') return;
+      this.hooks.onChunkEnd && this.hooks.onChunkEnd(c, this.idx);
+      this.idx++;
+      this.schedule(c.pause * this.pauseScale);
+    };
+    this.say(c, done, g);
+  },
+  say(c, done, g){
+    if(this.mode() === 'text'){
+      const words = c.text.split(/\s+/).length;
+      this.wd = setTimeout(done, (words * 430 / this.rate / 1) * this.pauseScale + 300 * this.pauseScale);
+      return;
+    }
+    const synth = speechSynthesis; let finished = false;
+    const u = new SpeechSynthesisUtterance(c.text);
+    const v = pickVoice(); if(v){ u.voice = v; u.lang = v.lang; } else u.lang = 'en-US';
+    u.rate = this.rate; u.pitch = this.pitch; u.volume = Math.max(.02, Math.min(1, LEVEL));
+    const fin = () => { if(finished) return; finished = true; clearTimeout(this.wd); this.stopKA(); done(); };
+    u.onend = fin;
+    u.onerror = e => { if(e && (e.error === 'canceled' || e.error === 'interrupted')) return; fin(); };
+    // watchdog: some Chrome/Edge builds never fire onend
+    const est = (c.text.length * 95 / this.rate) + 4000;
+    clearTimeout(this.wd);
+    this.wd = setTimeout(() => { if(finished || g !== this.gen) return; try{ synth.cancel(); }catch(e){} fin(); }, est * this.speedScale);
+    setTimeout(() => { if(g !== this.gen || finished) return; try{ synth.speak(u); this.startKA(); }catch(e){ fin(); } }, 40);
+  },
+  startKA(){ // keep-alive for the ~15s cutoff bug
+    this.stopKA(); if(this.mode() !== 'synth') return;
+    this.ka = setInterval(() => { try{ if(speechSynthesis.speaking && !speechSynthesis.paused){ speechSynthesis.pause(); speechSynthesis.resume(); } }catch(e){} }, 9000);
+  },
+  stopKA(){ clearInterval(this.ka); this.ka = null; },
+  pause(){
+    if(this.state !== 'running') return false;
+    this.state = 'paused'; clearTimeout(this.timer); clearTimeout(this.wd); this.stopKA(); this.gen++;
+    try{ if(hasSynth) speechSynthesis.cancel(); }catch(e){}
+    return true;
+  },
+  resume(){
+    if(this.state !== 'paused') return false;
+    this.state = 'running'; this.gen++; this.schedule(250 * this.pauseScale); return true;
+  },
+  stop(){
+    this.gen++; clearTimeout(this.timer); clearTimeout(this.wd); this.stopKA();
+    if(this.state !== 'idle'){ try{ if(hasSynth) speechSynthesis.cancel(); }catch(e){} }
+    this.state = 'idle';
+  }
+};
+
+/* ============================== SLEEP TIMER ============================== */
+const Timer = {
+  state:'idle', mode:'min', endAt:0, fadeWindow:60000, fadeMs:60000, endFadeMs:25000, off:0, level:1,
+  now(){ return performance.now() + this.off; },
+  advance(ms){ this.off += ms; },
+  start(v){
+    this.level = 1; this.off = this.off || 0;
+    if(v === 'end'){ this.mode = 'end'; this.endAt = Infinity; this.fadeWindow = this.endFadeMs; }
+    else { this.mode = 'min'; const d = (+v) * 60000; this.endAt = this.now() + d; this.fadeWindow = Math.min(this.fadeMs, d); }
+    this.state = 'running'; this.apply(1);
+  },
+  remaining(){ return this.endAt === Infinity ? Infinity : Math.max(0, this.endAt - this.now()); },
+  update(){
+    if(this.state === 'idle' || this.state === 'done') return this.state;
+    const r = this.remaining();
+    if(r === Infinity){ return this.state; }
+    if(r <= 0){ this.finish(); return this.state; }
+    if(r <= this.fadeWindow){ this.state = 'fading'; const l = r / this.fadeWindow; this.apply(l * l * (3 - 2 * l)); }
+    else { this.state = 'running'; this.apply(1); }
+    return this.state;
+  },
+  apply(l){ this.level = l; A.setLevel(l); },
+  storyEnded(hasBed){
+    if(this.state === 'idle' || this.state === 'done') return;
+    if(this.mode === 'end'){ this.mode = 'ending'; this.fadeWindow = this.endFadeMs; this.endAt = this.now() + this.endFadeMs; }
+    else if(!hasBed){ const w = Math.min(this.remaining(), this.endFadeMs * .6); if(w < this.remaining()){ this.endAt = this.now() + w; this.fadeWindow = w; } }
+  },
+  finish(){ this.state = 'done'; this.apply(0); UI.goodnight(); },
+  cancel(){ this.state = 'idle'; this.level = 1; this.endAt = 0; A.setLevel(1); }
+};
+setInterval(() => { Timer.update(); UI.tickLeft(); }, 250);
+
+/* ============================== WAKE LOCK ============================== */
+const WL = {
+  lock:null, want:false,
+  async on(){ this.want = true; try{ if('wakeLock' in navigator && !this.lock){ this.lock = await navigator.wakeLock.request('screen'); this.lock.addEventListener('release', () => { this.lock = null; }); } }catch(e){ this.lock = null; } },
+  async off(){ this.want = false; try{ if(this.lock) await this.lock.release(); }catch(e){} this.lock = null; }
+};
+document.addEventListener('visibilitychange', () => { if(document.visibilityState === 'visible' && WL.want) WL.on(); });
+
+/* ============================== UI ============================== */
+const screens = ['intro', 'setup', 'player', 'breathe', 'goodnight'];
+const UI = {
+  step:0, playing:false, offMode:false,
+  show(name){
+    screens.forEach(s => $('#' + s).classList.toggle('active', s === name));
+    document.body.dataset.screen = name;
+    const h = { intro:'#t1', goodnight:'#gt' }[name]; if(h) try{ $(h).focus({preventScroll:true}); }catch(e){}
+    Sky.setActive(name !== 'goodnight');
+  },
+  applyBright(){ $('#dim').style.opacity = String((100 - P.bright) / 100 * .9); },
+  renderItems(){
+    const box = $('#itemList'); box.innerHTML = '';
+    ALL[P.kind].forEach(it => {
+      const l = document.createElement('label'); l.className = 'opt';
+      l.innerHTML = '<input class="r" type="radio" name="item" value="' + it.id + '"><span class="lbl"><b></b><small></small></span>';
+      $('b', l).textContent = it.title; $('small', l).textContent = it.min ? it.min + ' min' : 'verses';
+      const inp = $('input', l); inp.checked = it.id === P.item;
+      inp.addEventListener('change', () => { P.item = it.id; savePrefs(); UI.summary(); });
+      box.appendChild(l);
+    });
+  },
+  renderAmb(){
+    const box = $('#ambList'); box.innerHTML = '';
+    AMBS.forEach(a => {
+      const l = document.createElement('label'); l.className = 'opt';
+      l.innerHTML = '<input class="r" type="radio" name="amb" value="' + a.id + '"><span class="lbl"><b></b>' + (a.id === 'none' ? '' : '<span class="vol"><input type="range" min="0" max="100" aria-label="' + a.name + ' volume"></span>') + '</span>';
+      $('b', l).textContent = a.name;
+      const r = $('input.r', l); r.checked = P.amb === a.id;
+      r.addEventListener('change', () => { P.amb = a.id; savePrefs(); UI.summary(); });
+      const v = $('.vol input', l);
+      if(v){ v.value = Math.round(P.vols[a.id] * 100);
+        v.addEventListener('click', e => e.stopPropagation());
+        v.addEventListener('input', () => { P.vols[a.id] = v.value / 100; savePrefs(); A.updAmbVol(); }); }
+      box.appendChild(l);
+    });
+  },
+  renderTimers(){
+    const box = $('#timerChips'); box.innerHTML = '';
+    TIMERS.forEach(t => {
+      const l = document.createElement('label');
+      l.innerHTML = '<input type="radio" name="timer" value="' + t + '"><span>' + (t === 'end' ? 'End of story' : t + ' min') + '</span>';
+      const i = $('input', l); i.checked = P.timer === t;
+      i.addEventListener('change', () => { P.timer = t; savePrefs(); UI.summary(); });
+      box.appendChild(l);
+    });
+  },
+  summary(){
+    const it = curItem(), amb = AMBS.find(a => a.id === P.amb);
+    const t = P.timer === 'end' ? 'until the ' + (P.kind === 'story' ? 'story' : 'lullaby') + ' ends' : 'in ' + P.timer + ' minutes';
+    $('#sum').textContent = it.title + ' · ' + amb.name.toLowerCase() + ' · asleep ' + t;
+    $('#musicRow').style.display = P.kind === 'lullaby' ? '' : 'none';
+  },
+  setStep(n){
+    this.step = n;
+    $$('.step').forEach(s => s.classList.toggle('on', +s.dataset.step === n));
+    $$('.dots i').forEach((d, i) => d.classList.toggle('on', i <= n));
+    $('#backBtn').textContent = n === 0 ? 'Home' : 'Back';
+    const nb = $('#nextBtn'); nb.textContent = n === 3 ? 'Tuck me in' : 'Next'; nb.setAttribute('aria-label', n === 3 ? 'Tuck me in' : 'Next step');
+    if(n === 3) this.summary();
+    $('#setup').scrollTop = 0;
+  },
+  sync(){
+    $$('input[name=kind]').forEach(i => i.checked = i.value === P.kind);
+    $$('input[name=vtype]').forEach(i => i.checked = i.value === P.vtype);
+    $('#musicVol').value = Math.round(P.music * 100);
+    $('#bright').value = P.bright; $('#wake').checked = !!P.wake; $('#words').checked = !!P.words;
+    this.renderItems(); this.renderAmb(); this.renderTimers(); this.summary(); this.applyBright();
+    $('#quickBtn').hidden = !hasSaved;
+  },
+  /* ---- subtitles ---- */
+  showLine(c){
+    const s = $('#sub'), s2 = $('#sub2');
+    if(!P.words){ s.classList.remove('show'); return; }
+    if(c.line){ s2.textContent = this.prevLine || ''; this.prevLine = c.text; s2.style.opacity = this.prevPara === c.para ? 1 : 0; this.prevPara = c.para; }
+    else { s2.textContent = ''; }
+    s.textContent = c.text; s.classList.add('show');
+  },
+  hideLine(){ $('#sub').classList.remove('show'); },
+  tickLeft(){
+    if(!this.playing) return;
+    const r = Timer.remaining(), el = $('#pleft');
+    if(Timer.state === 'done') return;
+    if(r === Infinity) el.textContent = P.timer === 'end' ? 'until the end' : '';
+    else { const m = Math.ceil(r / 60000); el.textContent = 'asleep in ' + m + ' min'; }
+  },
+  /* ---- session ---- */
+  async tuckIn(){
+    savePrefs();
+    const it = curItem(), kind = P.kind;
+    this.playing = true; this.prevLine = ''; this.prevPara = -1;
+    A.init();
+    if(P.wake) WL.on(); else WL.off();
+    $('#ptitle').textContent = it.title;
+    $('#sub').textContent = ''; $('#sub2').textContent = '';
+    this.setPauseBtn(false);
+    this.show('player');
+    Timer.start(P.timer);
+    A.setAmb(P.amb);
+    if(kind === 'lullaby') A.startMusic(it);
+    const chunks = buildChunks(kind, it);
+    const run = () => Speech.start(chunks, {
+      onChunk:c => UI.showLine(c),
+      onChunkEnd:() => UI.hideLine(),
+      onEnd:() => {
+        const bed = P.amb !== 'none' || kind === 'lullaby';
+        if(kind === 'lullaby' && P.timer !== 'end' && Timer.state !== 'done' && Timer.state !== 'idle'){
+          Speech.timer = setTimeout(() => { if(UI.playing && Timer.state !== 'done') run(); }, 6000 * Speech.pauseScale); return;
+        }
+        Timer.storyEnded(bed);
+        UI.hideLine();
+        $('#sub').textContent = '';
+      }
+    });
+    this._run = run;
+    $('#sub').textContent = 'settle in...'; $('#sub').classList.add('show');
+    Speech.leadIn = setTimeout(() => { $('#sub').classList.remove('show'); setTimeout(run, 1200 * Speech.pauseScale); }, 2600 * Speech.pauseScale);
+  },
+  setPauseBtn(paused){ const b = $('#pauseBtn'); b.textContent = paused ? 'Resume' : 'Pause'; b.setAttribute('aria-label', paused ? 'Resume' : 'Pause'); },
+  togglePause(){
+    if(!this.playing || Timer.state === 'done') return;
+    if(Speech.state === 'running'){ Speech.pause(); this.setPauseBtn(true); }
+    else if(Speech.state === 'paused'){ Speech.resume(); this.setPauseBtn(false); }
+  },
+  endSession(toScreen){
+    this.playing = false; clearTimeout(Speech.leadIn); Speech.stop(); A.stopAll(1.6); Timer.cancel(); WL.off(); this.screenOff(false);
+    this.show(toScreen || 'setup');
+  },
+  goodnight(){
+    this.playing = false; clearTimeout(Speech.leadIn); Speech.stop(); A.stopAll(2.5); WL.off(); this.screenOff(false);
+    $('#sub').classList.remove('show');
+    setTimeout(() => { if(A.ctx){ try{ A.ctx.suspend(); }catch(e){} } }, 3200);
+    this.show('goodnight');
+  },
+  screenOff(on){ this.offMode = on; document.body.classList.toggle('off', on); if(on) Sky.setActive(false); else Sky.setActive(document.body.dataset.screen !== 'goodnight'); }
+};
+
+/* ============================== BREATHING 4-7-8 ============================== */
+const Breath = {
+  on:false, t:null, phase:'idle', speed:1, count:0,
+  start(){
+    if(this.on) return; this.on = true; this.count = 0; $('#bgo').textContent = 'Stop';
+    if($('#btone').checked && A.init()) A.toneStart();
+    this.go(0);
+  },
+  go(i){
+    if(!this.on) return;
+    const ph = [['in', 'Breathe in', 4000], ['hold', 'Hold', 7000], ['out', 'Breathe out', 8000]][i % 3];
+    this.phase = ph[0]; $('#orb').dataset.p = ph[0]; $('#bl').textContent = ph[1];
+    if(A.tone) A.toneShape(ph[0]);
+    this.count++;
+    let n = Math.round(ph[2] / 1000); $('#bc').textContent = n;
+    clearInterval(this.ci);
+    this.ci = setInterval(() => { n--; if(n > 0) $('#bc').textContent = n; }, 1000 * this.speed);
+    this.t = setTimeout(() => this.go(i + 1), ph[2] * this.speed);
+  },
+  stop(){
+    this.on = false; clearTimeout(this.t); clearInterval(this.ci); this.phase = 'idle'; $('#orb').dataset.p = 'out'; $('#bl').textContent = 'Ready'; $('#bc').innerHTML = '4 in &middot; 7 hold &middot; 8 out'; $('#bgo').textContent = 'Begin';
+    A.toneStop();
+  }
+};
+
+/* ============================== SKY (canvas) ============================== */
+const Sky = {
+  cv:$('#sky'), cx:null, w:0, h:0, stars:[], cols:[], raf:0, active:true, last:0,
+  init(){
+    this.cx = this.cv.getContext('2d');
+    const rs = () => { const d = Math.min(devicePixelRatio || 1, 2); this.w = innerWidth; this.h = innerHeight; this.cv.width = this.w * d; this.cv.height = this.h * d; this.cx.setTransform(d, 0, 0, d, 0, 0); this.seed(); this.draw(0); };
+    addEventListener('resize', rs); rs();
+    this.loop = this.loop.bind(this);
+    this.setActive(true);
+  },
+  seed(){
+    const n = Math.round(this.w * this.h / 7000);
+    this.stars = Array.from({length:n}, () => ({x:Math.random() * this.w, y:Math.random() * this.h, r:Math.random() * 1.2 + .3, p:Math.random() * 6.28, s:Math.random() * .25 + .08, a:Math.random() * .5 + .25}));
+    const cn = Math.max(6, Math.round(this.w / 90));
+    this.cols = Array.from({length:cn}, (_, i) => ({x:(i + Math.random()) * this.w / cn, y:Math.random() * this.h, v:6 + Math.random() * 8, c:'01{}<>/;:=#'[Math.floor(Math.random() * 11)], t:0}));
+  },
+  setActive(a){ this.active = a; cancelAnimationFrame(this.raf); if(!a){ this.cx && this.cx.clearRect(0, 0, this.w, this.h); return; } if(RM) this.draw(0); else { this.last = performance.now(); this.raf = requestAnimationFrame(this.loop); } },
+  loop(t){
+    if(!this.active) return;
+    const dt = Math.min(.1, (t - this.last) / 1000); this.last = t;
+    if(t - (this._lf || 0) > 30){ this._lf = t; this.step(dt * 2); this.draw(t / 1000); }
+    this.raf = requestAnimationFrame(this.loop);
+  },
+  step(dt){
+    this.stars.forEach(s => { s.x -= s.s * dt * 3; if(s.x < -2) s.x = this.w + 2; });
+    this.cols.forEach(c => { c.y += c.v * dt; c.t += dt; if(c.t > 2.5){ c.t = 0; c.c = '01{}<>/;:=#'[Math.floor(Math.random() * 11)]; } if(c.y > this.h + 20){ c.y = -20; c.x = Math.random() * this.w; } });
+  },
+  draw(t){
+    const cx = this.cx; cx.clearRect(0, 0, this.w, this.h);
+    const g = cx.createRadialGradient(this.w * .5, this.h * .35, 0, this.w * .5, this.h * .35, Math.max(this.w, this.h) * .8);
+    g.addColorStop(0, '#0d0c1e'); g.addColorStop(1, '#030306'); cx.fillStyle = g; cx.fillRect(0, 0, this.w, this.h);
+    this.stars.forEach(s => { const tw = RM ? 1 : .75 + .25 * Math.sin(t * .35 + s.p); cx.globalAlpha = s.a * tw; cx.fillStyle = '#d9d2ff'; cx.beginPath(); cx.arc(s.x, s.y, s.r, 0, 6.283); cx.fill(); });
+    cx.globalAlpha = .12; cx.fillStyle = '#e8b46a'; cx.font = '15px ui-monospace, Consolas, monospace';
+    this.cols.forEach(c => { for(let k = 0; k < 6; k++){ cx.globalAlpha = .12 * (1 - k / 6); cx.fillText(c.c, c.x, c.y - k * 18); } });
+    cx.globalAlpha = 1;
+  }
+};
+
+/* ============================== WIRING ============================== */
+function wire(){
+  $('#startBtn').addEventListener('click', () => { UI.sync(); UI.setStep(0); UI.show('setup'); });
+  $('#quickBtn').addEventListener('click', () => { UI.sync(); UI.tuckIn(); });
+  $('#breatheBtn').addEventListener('click', () => UI.show('breathe'));
+  $('#bback').addEventListener('click', () => { Breath.stop(); UI.show('intro'); });
+  $('#bgo').addEventListener('click', () => Breath.on ? Breath.stop() : Breath.start());
+  $('#btone').addEventListener('change', () => { if(!Breath.on) return; if($('#btone').checked){ if(A.init()){ A.toneStart(); A.toneShape(Breath.phase); } } else A.toneStop(); });
+  $('#backBtn').addEventListener('click', () => { if(UI.step === 0) UI.show('intro'); else UI.setStep(UI.step - 1); });
+  $('#nextBtn').addEventListener('click', () => { if(UI.step < 3) UI.setStep(UI.step + 1); else UI.tuckIn(); });
+  $$('input[name=kind]').forEach(i => i.addEventListener('change', () => { P.kind = i.value; P.item = ALL[P.kind][0].id; savePrefs(); UI.renderItems(); UI.summary(); }));
+  $$('input[name=vtype]').forEach(i => i.addEventListener('change', () => { P.vtype = i.value; P.voice = 'auto'; savePrefs(); renderVoices(); }));
+  $('#voiceSel').addEventListener('change', e => { P.voice = e.target.value; savePrefs(); });
+  $('#hearBtn').addEventListener('click', () => {
+    if(!hasSynth || !VOICES.length) return;
+    try{ speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance('Goodnight. Slow and easy. There is nothing left to do.'); const v = pickVoice(); if(v){ u.voice = v; u.lang = v.lang; } u.rate = Speech.rate; u.pitch = Speech.pitch; u.volume = .8; setTimeout(() => speechSynthesis.speak(u), 60); }catch(e){}
+  });
+  $('#musicVol').addEventListener('input', e => { P.music = e.target.value / 100; savePrefs(); A.updMusicVol(); });
+  $('#bright').addEventListener('input', e => { P.bright = +e.target.value; savePrefs(); UI.applyBright(); });
+  $('#wake').addEventListener('change', e => { P.wake = e.target.checked; savePrefs(); });
+  $('#words').addEventListener('change', e => { P.words = e.target.checked; savePrefs(); });
+  $('#pauseBtn').addEventListener('click', () => UI.togglePause());
+  $('#offBtn').addEventListener('click', () => UI.screenOff(true));
+  $('#wordsBtn').addEventListener('click', () => { P.words = !P.words; savePrefs(); $('#wordsBtn').setAttribute('aria-pressed', String(P.words)); if(!P.words) UI.hideLine(); });
+  $('#stopBtn').addEventListener('click', () => UI.endSession('setup'));
+  $('#againBtn').addEventListener('click', () => { if(A.ctx) try{ A.ctx.resume(); }catch(e){} UI.sync(); UI.setStep(0); UI.show('setup'); });
+  document.addEventListener('click', e => { if(UI.offMode){ e.preventDefault(); e.stopPropagation(); UI.screenOff(false); } }, true);
+  document.addEventListener('keydown', e => {
+    if(UI.offMode){ UI.screenOff(false); e.preventDefault(); return; }
+    if(e.code === 'Space' && document.body.dataset.screen === 'player'){
+      const t = e.target; if(t && /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName)) return;
+      e.preventDefault(); if(!e.repeat) UI.togglePause();
+    }
+  });
+  document.addEventListener('keyup', e => { if(e.code === 'Space' && document.body.dataset.screen === 'player'){ const t = e.target; if(!(t && /^(INPUT|SELECT|TEXTAREA)$/.test(t.tagName))) e.preventDefault(); } });
+  if(hasSynth){ loadVoices(); try{ speechSynthesis.addEventListener('voiceschanged', loadVoices); }catch(e){ speechSynthesis.onvoiceschanged = loadVoices; }
+    let n = 0; const iv = setInterval(() => { if(VOICES.length || ++n > 12) return clearInterval(iv); loadVoices(); }, 250); }
+  else renderVoices();
+}
+
+Sky.init(); UI.sync(); wire();
+
+/* test + debugging hooks (no effect on normal use) */
+window.__goodnight = {
+  STORIES, LULLABIES, splitSentences, buildChunks, Speech, Timer, Breath, UI, A, RM,
+  prefs:() => P,
+  wordCount: s => s.text.trim().split(/\s+/).length,
+  setPauseScale:x => { Speech.pauseScale = x; Speech.speedScale = x; },
+  forceText:v => { Speech.forceText = v; renderVoices(); },
+  advance:ms => { Timer.advance(ms); Timer.update(); },
+  setFade:(ms, endMs) => { Timer.fadeMs = ms; if(endMs) Timer.endFadeMs = endMs; },
+  level:() => LEVEL,
+  voices:() => VOICES.map(v => v.name), pick:() => { const v = pickVoice(); return v && v.name; }
+};
+})();
+</script>
+</body>
+</html>
